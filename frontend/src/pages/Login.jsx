@@ -25,7 +25,6 @@ const Login = () => {
     }
   };
 
-  const fillDemo = (email, password) => setForm({ email, password });
 
   return (
     <div className="auth-page">
@@ -36,13 +35,6 @@ const Login = () => {
           <p>Sign in to your Campus Hub account</p>
         </div>
 
-        <div className="demo-box">
-          
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button className="btn-secondary" style={{ fontSize: '0.78rem', padding: '4px 10px' }} onClick={() => fillDemo('admin@campus.com', 'admin123')}>Use Admin</button>
-            <button className="btn-secondary" style={{ fontSize: '0.78rem', padding: '4px 10px' }} onClick={() => fillDemo('priya@student.com', 'student123')}>Use Student</button>
-          </div>
-        </div>
 
         {error && <div className="alert alert-error">{error}</div>}
 
