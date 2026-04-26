@@ -85,18 +85,19 @@ const ProductCard = ({ product, onEdit, onDelete, onStatusChange }) => {
           className="product-image"
           onError={e => { e.target.src = 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400'; }}
         />
-        <span className="product-category" style={{ background: color }}>{product.category}</span>
-        <span className="product-status-badge" style={{ background: sc.bg, color: sc.color }}>
-          {sc.label}
-        </span>
+
       </div>
 
       <div className="product-body">
+        <div className="product-meta-row">
+          <span className="product-cat-label">{product.category}</span>
+          <span className="product-status-text" style={{ color: sc.color }}>● {sc.label}</span>
+        </div>
         <h3 className="product-title">{product.title}</h3>
         <p className="product-description">{product.description}</p>
         <div className="product-footer">
           <span className="product-price">₹{product.price?.toLocaleString()}</span>
-          <span>👤 {product.sellerName}</span>
+          <span className="product-seller-name">👤 {product.sellerName}</span>
         </div>
 
         {/* Wishlist button — non-owners only */}
