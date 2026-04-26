@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,22 +21,29 @@ public class ContactRequestService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-    private final EmailService emailService;
+    // NOTE: No email or SMS — pure in-app notification workflow
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     public ContactRequest createContactRequest(String productId, String message) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User buyer = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User buyer = getCurrentUser();
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // Prevent duplicate requests from same buyer for same product
-        if (contactRequestRepository.existsByBuyerIdAndProductId(buyer.getId(), productId)) {
-            throw new RuntimeException("You have already sent a contact request for this product");
+        if (!"AVAILABLE".equalsIgnoreCase(product.getStatus())) {
+            throw new RuntimeException("This product is no longer available for contact");
         }
 
-        ContactRequest request = ContactRequest.builder()
+        if (contactRequestRepository.existsByBuyerIdAndProductId(buyer.getId(), productId)) {
+            throw new RuntimeException("You have already sent a request for this product");
+        }
+
+        ContactRequest req = ContactRequest.builder()
                 .productId(productId)
                 .productTitle(product.getTitle())
                 .buyerId(buyer.getId())
@@ -43,13 +51,13 @@ public class ContactRequestService {
                 .buyerEmail(buyer.getEmail())
                 .sellerId(product.getSellerId())
                 .sellerName(product.getSellerName())
-                .sellerContact(product.getContact())
                 .message(message)
+                .status("PENDING")
                 .build();
 
-        ContactRequest saved = contactRequestRepository.save(request);
+        ContactRequest saved = contactRequestRepository.save(req);
 
-        // ── Notify the seller (in-app)
+        // In-app: notify seller
         notificationService.createNotification(
                 product.getSellerId(),
                 "New Buyer Interest",
@@ -57,45 +65,62 @@ public class ContactRequestService {
                 "INFO"
         );
 
-        // ── Notify the buyer (in-app)
+        // In-app: notify buyer confirmation
         notificationService.createNotification(
                 buyer.getId(),
-                "Contact Request Sent",
-                "✅ Your contact request for \"" + product.getTitle() + "\" was sent to " + product.getSellerName(),
+                "Request Sent",
+                "✅ Your interest request for \"" + product.getTitle() + "\" was sent to " + product.getSellerName(),
                 "SUCCESS"
-        );
-
-        // ── Email OR SMS the seller (based on their contact type)
-        emailService.sendContactAlert(
-                product.getContact(),          // auto-detects email vs phone
-                product.getSellerName(),
-                buyer.getName(),
-                buyer.getEmail(),
-                product.getTitle(),
-                message
         );
 
         return saved;
     }
 
-    public List<ContactRequest> getMyContactRequests() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User buyer = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return contactRequestRepository.findByBuyerIdOrderByCreatedAtDesc(buyer.getId());
+    public List<ContactRequest> getBuyerRequests() {
+        return contactRequestRepository.findByBuyerIdOrderByCreatedAtDesc(getCurrentUser().getId());
     }
 
-    public List<ContactRequest> getSellerContactRequests() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User seller = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return contactRequestRepository.findBySellerIdOrderByCreatedAtDesc(seller.getId());
+    public List<ContactRequest> getSellerRequests() {
+        return contactRequestRepository.findBySellerIdOrderByCreatedAtDesc(getCurrentUser().getId());
     }
 
+    /**
+     * Seller updates status: ACCEPTED / REJECTED / RESPONDED
+     * Buyer gets in-app notification for each status change.
+     */
     public ContactRequest updateStatus(String requestId, String status) {
-        ContactRequest request = contactRequestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Contact request not found"));
-        request.setStatus(status);
-        return contactRequestRepository.save(request);
+        ContactRequest req = contactRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        req.setStatus(status.toUpperCase());
+        req.setUpdatedAt(LocalDateTime.now());
+        ContactRequest updated = contactRequestRepository.save(req);
+
+        // Notify buyer
+        String title, message, type;
+        switch (status.toUpperCase()) {
+            case "ACCEPTED" -> {
+                title = "Seller Accepted!";
+                message = "🎉 Seller \"" + req.getSellerName() + "\" accepted your request for \"" + req.getProductTitle() + "\". They will contact you soon.";
+                type = "SUCCESS";
+            }
+            case "REJECTED" -> {
+                title = "Request Not Accepted";
+                message = "❌ Seller \"" + req.getSellerName() + "\" declined your request for \"" + req.getProductTitle() + "\".";
+                type = "WARNING";
+            }
+            case "RESPONDED" -> {
+                title = "Seller Responded";
+                message = "💬 Seller \"" + req.getSellerName() + "\" has responded to your request for \"" + req.getProductTitle() + "\".";
+                type = "INFO";
+            }
+            default -> {
+                title = "Request Updated";
+                message = "Your request for \"" + req.getProductTitle() + "\" was updated to: " + status;
+                type = "INFO";
+            }
+        }
+        notificationService.createNotification(req.getBuyerId(), title, message, type);
+        return updated;
     }
 }

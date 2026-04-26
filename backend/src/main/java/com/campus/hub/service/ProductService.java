@@ -78,4 +78,17 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return productRepository.findBySellerId(user.getId());
     }
+
+    public Product updateProductStatus(String id, String status) {
+        Product existing = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (!existing.getSellerId().equals(user.getId())) {
+            throw new RuntimeException("Unauthorized: You can only update your own products");
+        }
+        existing.setStatus(status.toUpperCase());
+        return productRepository.save(existing);
+    }
 }

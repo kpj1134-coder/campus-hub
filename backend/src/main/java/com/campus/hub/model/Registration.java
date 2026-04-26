@@ -29,9 +29,17 @@ public class Registration {
     private String eventTime;
     private String eventLocation;
 
+    /**
+     * PENDING → Admin reviews
+     * APPROVED → Student gets QR pass
+     * REJECTED → Student notified
+     * CANCELLED → Student cancelled
+     */
+    @Builder.Default
+    private String status = "PENDING";
+
     @Builder.Default
     private LocalDateTime registeredAt = LocalDateTime.now();
 
-    @Builder.Default
-    private String status = "CONFIRMED";
+    private LocalDateTime updatedAt;
 }

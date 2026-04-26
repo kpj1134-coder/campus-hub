@@ -28,13 +28,20 @@ public class ContactRequest {
 
     private String sellerId;
     private String sellerName;
-    private String sellerContact;
 
     private String message;
+
+    /**
+     * PENDING   → Seller hasn't acted
+     * ACCEPTED  → Seller accepted interest
+     * REJECTED  → Seller declined
+     * RESPONDED → Seller replied/resolved
+     */
+    @Builder.Default
+    private String status = "PENDING";
 
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @Builder.Default
-    private String status = "PENDING";
+    private LocalDateTime updatedAt;
 }

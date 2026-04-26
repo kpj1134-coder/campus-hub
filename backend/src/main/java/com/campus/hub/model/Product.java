@@ -28,6 +28,14 @@ public class Product {
     private String contact;
     private String imageUrl;
 
+    /**
+     * AVAILABLE → Can be contacted
+     * RESERVED  → Under negotiation
+     * SOLD      → No longer available
+     */
+    @Builder.Default
+    private String status = "AVAILABLE";
+
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

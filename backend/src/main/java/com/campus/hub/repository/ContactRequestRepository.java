@@ -9,4 +9,6 @@ public interface ContactRequestRepository extends MongoRepository<ContactRequest
     List<ContactRequest> findByBuyerIdOrderByCreatedAtDesc(String buyerId);
     List<ContactRequest> findBySellerIdOrderByCreatedAtDesc(String sellerId);
     boolean existsByBuyerIdAndProductId(String buyerId, String productId);
+    long countBySellerIdAndStatus(String sellerId, String status);
+    long countByStatus(String status);
 }

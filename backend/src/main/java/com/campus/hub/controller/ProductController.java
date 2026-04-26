@@ -46,4 +46,12 @@ public class ProductController {
         productService.deleteProduct(id);
         return ResponseEntity.ok(Map.of("message", "Product deleted successfully"));
     }
+
+    /** PATCH /api/products/{id}/status — seller marks AVAILABLE / RESERVED / SOLD */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<Product> updateStatus(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(productService.updateProductStatus(id, body.get("status")));
+    }
 }

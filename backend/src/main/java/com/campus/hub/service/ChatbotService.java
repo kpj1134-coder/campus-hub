@@ -1,5 +1,6 @@
 package com.campus.hub.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -7,119 +8,150 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class ChatbotService {
 
     @Value("${ai.api.key:}")
     private String aiApiKey;
 
-    private static final Map<String, String> RULE_BASED_RESPONSES = new LinkedHashMap<>();
+    /**
+     * Ordered rule-based response map.
+     * Key = keyword(s) to match (comma-separated, case-insensitive).
+     * Value = response string.
+     * LinkedHashMap preserves insertion order — more specific rules first.
+     */
+    private static final LinkedHashMap<String, String> RULES = new LinkedHashMap<>();
 
     static {
-        // Greetings
-        RULE_BASED_RESPONSES.put("hello", "👋 Hello! Welcome to **Campus Hub**! I'm your AI assistant. How can I help you today? Type **'help'** to see all I can do!");
-        RULE_BASED_RESPONSES.put("hi ", "👋 Hi there! I'm the **Campus Hub Assistant**. Type **'help'** to see what I can do for you.");
-        RULE_BASED_RESPONSES.put("hey", "👋 Hey! Great to see you on Campus Hub. Type **'help'** for a list of things I can help with.");
+        // ── GREETING ────────────────────────────────────────────────────────
+        RULES.put("hello,hi,hey,greet,help", "👋 Hey there! I'm Campus Hub AI. I can help you with:\n\n• 🛒 Marketplace (buy/sell)\n• 🎉 Events (register & get QR pass)\n• 📬 Contact Seller workflow\n• ❤️ Wishlist / Saved Products\n• 🔔 Notifications\n• 👑 Admin functions\n\nJust ask me anything!");
 
-        // Help
-        RULE_BASED_RESPONSES.put("help", "🤝 I can help you with:\n\n" +
-                "🛒 **Marketplace** — Add, browse, and contact sellers\n" +
-                "🎉 **Campus Events** — View and register for events\n" +
-                "🌐 **External Events** — Discover inter-college events\n" +
-                "📬 **Contact Seller** — Send interest requests\n" +
-                "🔐 **Login/Register** — Account setup\n" +
-                "📊 **Dashboard** — Overview of your activity\n" +
-                "🔔 **Notifications** — Track your alerts\n" +
-                "👤 **Profile** — View your account info\n\n" +
-                "Just type your question and I'll answer!");
+        // ── REGISTRATION & QR PASS ───────────────────────────────────────────
+        RULES.put("qr,pass,qr code,qr pass,event pass,download pass,ticket",
+                "🎟️ **QR Event Pass**\n\n1. Register for any event (Events page)\n2. Your status starts as **PENDING**\n3. Admin reviews and **Approves** or Rejects\n4. If Approved → go to **My Registered Events**\n5. Your QR Pass appears automatically ✅\n6. Click **Download Pass** to save as PNG\n\nShow your QR at the event entry.");
 
-        // Marketplace / Products
-        RULE_BASED_RESPONSES.put("add product", "🛒 To add a product:\n1. Login to your account\n2. Go to **Marketplace**\n3. Click **'+ Add Product'**\n4. Fill in title, description, price, category, and contact info\n5. Click **Save** ✅");
-        RULE_BASED_RESPONSES.put("sell", "💰 Want to sell something?\n1. Go to **Marketplace**\n2. Click **'+ Add Product'**\n3. Fill in details and your contact info\n4. Your product will be visible to all students!");
-        RULE_BASED_RESPONSES.put("product", "🛒 Browse all listed products on the **Marketplace** page. You can filter by category and search by name. Contact the seller using the **'Contact Seller'** button!");
-        RULE_BASED_RESPONSES.put("edit product", "✏️ To edit your product:\n1. Go to **Marketplace**\n2. Find your product (or go to **My Products** in Dashboard)\n3. Click **Edit**\n4. Update details and Save");
-        RULE_BASED_RESPONSES.put("delete product", "🗑️ To delete your product:\n1. Go to **Marketplace** or **Dashboard → My Products**\n2. Click the **Delete** button\n3. Confirm deletion");
-        RULE_BASED_RESPONSES.put("my product", "📦 See all your listed products in **Dashboard → My Products** or visit **Marketplace** and filter by your listings.");
+        RULES.put("register event,event register,how to register,register for event",
+                "🎉 **Event Registration**\n\n1. Go to **Events** page\n2. Find an event you like\n3. Click **Register**\n4. Status = PENDING (awaiting admin approval)\n5. Admin approves → you get a notification + QR Pass\n\n📍 Track registrations at **My Registered Events**");
 
-        // Contact Seller
-        RULE_BASED_RESPONSES.put("contact seller", "📬 To contact a seller:\n1. Find the product in **Marketplace**\n2. Click **'📬 Contact Seller'**\n3. Type your message in the popup\n4. Click **Send Request**\n\nThe seller gets an email + notification instantly! ✅");
-        RULE_BASED_RESPONSES.put("contact request", "📬 Your contact requests are in **Dashboard → My Contact Requests** or at **Contact Requests** page.\n\nEvery request shows:\n• Product name\n• Seller's contact details\n• Message you sent\n• Status (SENT/VIEWED/RESPONDED)");
-        RULE_BASED_RESPONSES.put("seller", "👤 Seller contact information is revealed after you click **'Contact Seller'** on a product card and send a request.");
+        RULES.put("pending,pending registration,pending request,what is pending",
+                "⏳ **What does PENDING mean?**\n\nPENDING means your request is submitted but waiting for action:\n\n• **Event Registration** → Admin hasn't approved yet\n• **Contact Request** → Seller hasn't responded yet\n\nYou'll get an in-app notification when status changes.");
 
-        // Events
-        RULE_BASED_RESPONSES.put("register for event", "🎟️ To register for an event:\n1. Go to **Events Hub**\n2. Find the event you like\n3. Click **'🎟️ Register'**\n4. You'll get a confirmation notification ✅\n\nYou can only register once per event.");
-        RULE_BASED_RESPONSES.put("event", "🎉 Campus Events are listed on the **Events Hub** page. Click **Register** to join. Check **My Registered Events** to see your registrations.");
-        RULE_BASED_RESPONSES.put("campus event", "🎉 Campus events are created by admins. Go to **Events Hub** to browse and register. You'll get a notification and email confirmation upon registration!");
-        RULE_BASED_RESPONSES.put("my event", "🎟️ Your registered events are in **Dashboard → My Registered Events** or at the **My Registered Events** page. You can view event date, time, location, and status.");
-        RULE_BASED_RESPONSES.put("cancel registration", "❌ To cancel your event registration:\n1. Go to **My Registered Events**\n2. Find the event\n3. Click **'Cancel Registration'**\n\nNote: Admin will be notified of the cancellation.");
-        RULE_BASED_RESPONSES.put("registered event", "🎟️ See all your registered events in **Dashboard → My Registered Events** or the **My Registered Events** page.");
+        RULES.put("approved,approve,approval,how admin approves",
+                "✅ **Admin Approval**\n\nWhen admin **Approves** your event registration:\n• You get an in-app notification\n• Your QR Event Pass is generated\n• Go to **My Registered Events** to download it\n\nAdmin can also **Reject** if capacity is full.");
 
-        // External Events
-        RULE_BASED_RESPONSES.put("external event", "🌐 **External Events** are real college events from across India (sourced via Knowafest).\n\n- Browse at **External Events** page\n- Filter by city, state, event type, and date\n- Click **'View Details'** to open the original event page\n- Admins can add new external events manually");
-        RULE_BASED_RESPONSES.put("knowafest", "🌐 External events on Campus Hub are sourced from college event platforms. Admins curate and add these events manually so you get the best inter-college opportunities!");
-        RULE_BASED_RESPONSES.put("inter college", "🌐 Check the **External Events** page for hackathons, workshops, tech fests, and seminars happening at colleges across India!");
-        RULE_BASED_RESPONSES.put("hackathon", "💻 Looking for hackathons? Check the **External Events** page! Filter by **'Hackathon'** event type to see all available hackathons.");
+        RULES.put("cancel,cancel registration",
+                "🚫 **Cancel Registration**\n\nYou can cancel a PENDING registration:\n1. Go to **My Registered Events**\n2. Find the pending event\n3. Click **Cancel Registration**\n\n⚠️ Once APPROVED, you cannot cancel online — contact the organizer.");
 
-        // Dashboard
-        RULE_BASED_RESPONSES.put("dashboard", "📊 Your **Dashboard** shows everything at a glance:\n\n• 🛒 My Products\n• 🎟️ My Registered Events\n• 📬 My Contact Requests\n• 🔔 Recent Notifications\n• 📈 Stats cards\n• ⚡ Quick action buttons");
+        // ── MARKETPLACE & PRODUCTS ───────────────────────────────────────────
+        RULES.put("add product,sell,list product,create listing,post product",
+                "🛒 **Adding a Product**\n\n1. Go to **Marketplace**\n2. Click **+ Add Product**\n3. Fill in: Title, Description, Category, Price, Contact, Image URL\n4. Click **Add Product**\n\nYour listing appears immediately. You can Edit/Delete anytime.");
 
-        // Notifications
-        RULE_BASED_RESPONSES.put("notification", "🔔 Your **Notifications** page shows:\n• Contact request sent/received\n• Event registration confirmations\n• Admin alerts\n\nNotifications are shown with correct real time like **'5 min ago'** or **'Today 3:45 PM'**.");
-        RULE_BASED_RESPONSES.put("unread", "🔔 Unread notifications show a badge count in the navbar. Go to **Notifications** to view and mark them as read.");
+        RULES.put("edit product,update product,modify listing",
+                "✏️ **Editing a Product**\n\n1. Go to **Marketplace**\n2. Find YOUR product (shows Edit button)\n3. Click **✏️ Edit**\n4. Update fields and save\n\nOnly YOU (seller) can edit your own listings.");
 
-        // Auth
-        RULE_BASED_RESPONSES.put("login", "🔐 To login:\n1. Go to the **Login** page\n2. Enter your registered email and password\n3. Click **Sign In**\n\nAfter login, you'll be taken to the **Dashboard** automatically.");
-        RULE_BASED_RESPONSES.put("register", "📝 To create an account:\n1. Click **Register** on the login page\n2. Enter your name, email, and password\n3. Click **Create Account**\n\nYou'll be automatically logged in and taken to the Dashboard!");
-        RULE_BASED_RESPONSES.put("password", "🔑 If you forgot your password, please contact the admin at **admin@campus.com**.");
-        RULE_BASED_RESPONSES.put("logout", "👋 To logout, click the **Logout** button in the navbar. You'll be redirected to the Login page.");
-        RULE_BASED_RESPONSES.put("account", "👤 Your account info is on the **Profile** page. You can view your name, email, role, and activity stats.");
+        RULES.put("product status,available,reserved,sold,mark sold,mark reserved",
+                "🏷️ **Product Status**\n\nAs a seller you can change status:\n• **AVAILABLE** = Open for contact\n• **RESERVED** = Under negotiation\n• **SOLD** = No longer available\n\nUse the dropdown on your product card.\nBuyers CANNOT contact for RESERVED or SOLD items.");
 
-        // Admin
-        RULE_BASED_RESPONSES.put("admin", "👑 **Admin features include:**\n• Add/Edit/Delete campus events\n• View event registrations\n• Add external events\n• View all products\n• Manage notifications\n\nContact **admin@campus.com** for admin access.");
-        RULE_BASED_RESPONSES.put("admin dashboard", "👑 The Admin Dashboard shows:\n• Total users, products, events\n• Event registration counts\n• Recent buyer interests\n• Quick action buttons");
+        RULES.put("delete product,remove listing",
+                "🗑️ **Deleting a Product**\n\n1. Go to **Marketplace**\n2. Find YOUR product\n3. Click **🗑️ Delete**\n4. Confirm deletion\n\nAdmins can also remove any listing if it violates rules.");
 
-        // Profile
-        RULE_BASED_RESPONSES.put("profile", "👤 Your **Profile page** shows:\n• Name & Email\n• Account Role\n• My Products count\n• My Registrations count\n• My Contact Requests count\n\nGo to **Profile** from the navbar.");
+        RULES.put("search,filter,find product,browse,category",
+                "🔍 **Finding Products**\n\n• Use the **search bar** to search by title/description\n• Use **category filters** (Books, Electronics, Notes, etc.)\n• Hover on products to see full details\n• Products sorted by newest first");
 
-        // General
-        RULE_BASED_RESPONSES.put("how to", "🤔 I can help with that! Could you be more specific? Try asking:\n• **'how to add product'**\n• **'how to contact seller'**\n• **'how to register for event'**\n• **'how to view notifications'**");
-        RULE_BASED_RESPONSES.put("what is", "🤔 Campus Hub is a full-stack platform for college students that includes:\n🛒 Marketplace · 🎉 Events · 🌐 External Events · 📬 Seller Contact · 🤖 AI Chatbot · 📊 Dashboard");
+        // ── CONTACT SELLER ───────────────────────────────────────────────────
+        RULES.put("contact seller,contact,send request,interest,message seller",
+                "📬 **Contact Seller Workflow**\n\n1. Browse Marketplace\n2. Click **📬 Contact Seller** on any AVAILABLE product\n3. Type your message and send\n4. Seller gets an **in-app notification**\n5. Track status under **Contact Requests**\n\nStatus flow: PENDING → ACCEPTED / REJECTED / RESPONDED");
+
+        RULES.put("accepted,seller accepted,request accepted",
+                "✅ **Request Accepted!**\n\nWhen seller ACCEPTS your request:\n• You get an in-app notification\n• Seller will contact you via your registered email\n• Check your email or ask the seller to reach out\n\nTip: Make sure your profile email is correct.");
+
+        RULES.put("rejected,seller rejected,request rejected",
+                "❌ **Request Rejected**\n\nThe seller has declined your interest. This can happen if:\n• Product is already reserved/sold\n• Seller found another buyer\n\nTry contacting another seller or check back later.");
+
+        RULES.put("contact request,my requests,sent requests",
+                "📬 **My Contact Requests**\n\nGo to **Contact Requests** page:\n• **Sent tab** = requests you sent as buyer\n• **Received tab** = requests sellers sent to you (as seller)\n\nSellers can Accept, Reject, or Mark Responded.");
+
+        // ── WISHLIST ─────────────────────────────────────────────────────────
+        RULES.put("wishlist,save,saved,bookmark,favourite,favorite",
+                "❤️ **Wishlist / Saved Products**\n\n• Click **🤍 Save** on any product card to save it\n• Click again to **❤️ unsave** (toggle)\n• View all saved items at **Saved Products** page\n• Saved items show current status (Available/Reserved/Sold)");
+
+        RULES.put("saved products,my saved,wishlist page",
+                "❤️ Go to **Saved Products** in the menu to see all items you've saved. You can remove items from there too.");
+
+        // ── NOTIFICATIONS ────────────────────────────────────────────────────
+        RULES.put("notification,notifications,alert,alerts,bell",
+                "🔔 **In-App Notifications**\n\nYou get notifications for:\n• Contact request sent/accepted/rejected\n• Event registration submitted\n• Event approved/rejected by admin\n• Product updates\n\n**Actions:**\n• Click ✓ to mark one read\n• Mark All as Read\n• 🗑️ Delete individual notifications\n\nThe 🔔 badge in the navbar shows unread count.");
+
+        RULES.put("unread,mark read,read all",
+                "✅ To clear notifications:\n• Go to **Notifications** page\n• Click **Mark All Read** button, or\n• Click ✓ on each notification individually\n• Red badge disappears when count = 0");
+
+        // ── EVENTS ───────────────────────────────────────────────────────────
+        RULES.put("events,campus event,add event,create event",
+                "🎉 **Campus Events**\n\n**Students:**\n• Browse events on Events page\n• Click Register → status = PENDING\n• Track status at My Registered Events\n\n**Admins:**\n• Click **+ Add Event** on Events page\n• Fill title, description, date, time, location\n• Approve/reject registrations at Event Requests page");
+
+        RULES.put("event requests,admin event,event approval,approve registration",
+                "👑 **Admin Event Requests**\n\nAdmins go to **Event Requests** page:\n• See all PENDING registrations\n• Click **✅ Approve** or **❌ Reject**\n• Student gets notified automatically\n• Approved students get QR pass");
+
+        // ── AUTH ─────────────────────────────────────────────────────────────
+        RULES.put("login,sign in,signin",
+                "🔐 **Login**\n\n1. Go to the Login page\n2. Enter your registered email & password\n3. Click **Login**\n4. You're redirected to Dashboard\n\nIf you haven't registered, click **Register** first.");
+
+        RULES.put("register,sign up,signup,create account",
+                "📝 **Register**\n\n1. Click **Register** on the login page\n2. Enter your name, email, password\n3. Click **Create Account**\n4. You're automatically logged in!\n\nPasswords are securely hashed with BCrypt.");
+
+        RULES.put("logout,sign out",
+                "👋 To logout, click the **Logout** button in the navbar (top right). Your session will be cleared and you'll return to the login page.");
+
+        RULES.put("password,forgot password,reset password",
+                "🔒 Forgot password? Currently the app doesn't have email-based reset. Contact your campus admin to reset your account or re-register with the same email.");
+
+        // ── PROFILE ──────────────────────────────────────────────────────────
+        RULES.put("profile,account,my account,user profile",
+                "👤 **Profile Page**\n\nClick your name chip in the navbar or go to **Profile**.\nYou can see:\n• Your name, email, role\n• Activity stats (products, registrations, requests)\n• Quick links to your pages");
+
+        // ── ADMIN ────────────────────────────────────────────────────────────
+        RULES.put("admin,admin dashboard,admin panel",
+                "👑 **Admin Dashboard**\n\nAdmins see:\n• Analytics cards (users, products, events, registrations)\n• Pending event approvals\n• Pending seller requests\n• Quick action shortcuts\n\nAdmin-only: Create events, approve/reject registrations");
+
+        RULES.put("analytics,stats,statistics,metrics",
+                "📊 **Analytics Dashboard** (Admin only)\n\nThe admin dashboard shows:\n• Total users, products, events\n• Available vs Sold products\n• Pending/Approved/Rejected registrations\n• Pending contact requests");
+
+        // ── TECH / HOW IT WORKS ──────────────────────────────────────────────
+        RULES.put("how does it work,explain,overview,what is campus hub",
+                "🎓 **Campus Hub Overview**\n\nA full-stack campus platform with:\n• 🛒 **Marketplace** — Buy/sell within campus\n• 🎉 **Events** — Register with admin approval + QR pass\n• 📬 **Contact Seller** — In-app messaging workflow\n• ❤️ **Wishlist** — Save products for later\n• 🔔 **Notifications** — Real-time in-app alerts\n• 🤖 **AI Chatbot** — This is me!\n\nBuilt with React + Spring Boot + MongoDB + JWT");
+
+        RULES.put("technology,tech stack,built with,spring boot,react,mongodb",
+                "⚙️ **Tech Stack**\n\n• **Frontend**: React 18, Vite, Vanilla CSS\n• **Backend**: Spring Boot 3, Spring Security\n• **Database**: MongoDB (Spring Data)\n• **Auth**: JWT + BCrypt\n• **QR Code**: qrcode.react\n• **Deploy**: Vercel (frontend), Render (backend)");
+
+        // ── FALLBACK ─────────────────────────────────────────────────────────
     }
 
-    public String getResponse(String message) {
-        if (message == null || message.isBlank()) {
-            return "Please type a message and I'll be happy to help! 😊";
+    public String getResponse(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            return "Please type a question and I'll help you! 😊";
         }
 
-        String lower = message.toLowerCase().trim();
+        String lower = userMessage.toLowerCase().trim();
 
-        // AI API (if configured)
-        if (aiApiKey != null && !aiApiKey.isBlank()) {
-            return callAiApi(message);
-        }
-
-        // Rule-based matching
-        for (Map.Entry<String, String> entry : RULE_BASED_RESPONSES.entrySet()) {
-            if (lower.contains(entry.getKey())) {
-                return entry.getValue();
+        // Match against rules — check if any key word appears in message
+        for (Map.Entry<String, String> rule : RULES.entrySet()) {
+            String[] keywords = rule.getKey().split(",");
+            for (String kw : keywords) {
+                if (lower.contains(kw.trim())) {
+                    return rule.getValue();
+                }
             }
         }
 
-        // Smart fallback
-        return "🤔 I'm not sure about that specific question. Here's what I can help with:\n\n" +
-               "• **'help'** → Full feature guide\n" +
-               "• **'add product'** → List your item\n" +
-               "• **'contact seller'** → Contact a product seller\n" +
-               "• **'register for event'** → Join a campus event\n" +
-               "• **'external events'** → Discover inter-college events\n" +
-               "• **'notifications'** → Your alerts\n" +
-               "• **'dashboard'** → Your overview\n\n" +
-               "📧 For more help: **admin@campus.com**";
-    }
-
-    private String callAiApi(String message) {
-        // When AI_API_KEY is set, integrate with OpenAI or Gemini here
-        // Example: POST https://api.openai.com/v1/chat/completions
-        // For now, fall through to rule-based with AI-styled prefix
-        return getResponse(message.toLowerCase().contains("help") ? "help" : "default_fallback");
+        // Fallback response
+        return "🤔 I'm not sure about that. Here are some things you can ask me:\n\n" +
+               "• **How to add a product**\n" +
+               "• **How to contact a seller**\n" +
+               "• **How to get a QR pass**\n" +
+               "• **What does pending mean**\n" +
+               "• **How to register for an event**\n" +
+               "• **How wishlist works**\n" +
+               "• **How notifications work**\n\n" +
+               "Try rephrasing your question! 😊";
     }
 }

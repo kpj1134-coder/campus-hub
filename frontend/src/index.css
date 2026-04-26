@@ -488,3 +488,85 @@ body {
 @media (min-width: 1100px) and (max-width: 1279px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .dashboard-welcome { flex-direction: column; align-items: flex-start; } }
+
+/* ── PRODUCT CARD ENHANCEMENTS ────────────────────────────────────── */
+.product-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+.product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: var(--primary); }
+.product-card.product-sold { opacity: 0.65; filter: grayscale(0.3); }
+.product-image-wrap { position: relative; height: 180px; overflow: hidden; background: var(--bg3); }
+.product-image { width: 100%; height: 100%; object-fit: cover; }
+.product-category { position: absolute; top: 10px; left: 10px; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; color: white; }
+.product-status-badge { position: absolute; top: 10px; right: 10px; padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; backdrop-filter: blur(8px); }
+.product-body { padding: 16px; display: flex; flex-direction: column; flex: 1; gap: 8px; }
+.product-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.product-description { font-size: 0.83rem; color: var(--text-muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.product-footer { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--text-muted); margin-top: auto; }
+.product-price { font-size: 1.1rem; font-weight: 800; color: var(--warning); }
+.product-meta { display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; color: var(--text-dim); }
+.product-card-body { padding: 16px; flex: 1; }
+.product-card-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+/* Wishlist button */
+.btn-wishlist { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--text-muted); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+.btn-wishlist:hover { border-color: #db2777; color: #db2777; }
+.btn-wishlist.saved { background: rgba(219,39,119,0.1); border-color: #db2777; color: #db2777; }
+
+/* Contact / sold buttons */
+.btn-contact { width: 100%; padding: 10px; border-radius: 8px; border: none; background: var(--primary); color: white; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+.btn-contact:hover { background: var(--primary-dark); }
+.sold-notice { text-align: center; padding: 10px; font-size: 0.85rem; color: var(--text-dim); background: var(--bg3); border-radius: 8px; border: 1px solid var(--border); }
+.login-prompt { display: block; text-align: center; font-size: 0.82rem; color: var(--text-dim); padding: 8px; }
+
+/* Product action row */
+.product-actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+.btn-edit   { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+.btn-edit:hover { border-color: var(--primary); color: var(--primary-light); }
+.btn-delete { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); color: var(--danger); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+.btn-delete:hover { background: rgba(239,68,68,0.2); }
+
+/* Status select dropdown */
+.status-select-wrap { flex: 1; }
+.status-select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-size: 0.8rem; cursor: pointer; font-family: 'Inter', sans-serif; }
+.status-select:focus { outline: none; border-color: var(--primary); }
+
+/* ── ACTION BUTTON ROW ────────────────────────────────────────────── */
+.action-btns-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.btn-success { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.12); color: var(--success); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-success:hover { background: var(--success); color: white; }
+.btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger  { padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.4); background: rgba(239,68,68,0.1); color: var(--danger); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-danger:hover { background: var(--danger); color: white; }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── STATUS BADGE ─────────────────────────────────────────────────── */
+.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+
+/* ── QR PASS BOX ──────────────────────────────────────────────────── */
+.qr-pass-box { margin-top: 16px; background: linear-gradient(135deg, rgba(16,185,129,0.06), rgba(99,102,241,0.06)); border: 1px solid rgba(16,185,129,0.3); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.qr-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 700; color: var(--success); }
+.qr-code-wrapper { display: flex; justify-content: center; padding: 12px; background: white; border-radius: 10px; width: fit-content; align-self: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+.qr-info { font-size: 0.83rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+.qr-info strong { color: var(--text); font-size: 0.92rem; }
+
+/* ── REGISTRATION GRID ────────────────────────────────────────────── */
+.regs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+.reg-detail-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; transition: border-color 0.2s; }
+.reg-detail-card.pending  { border-left: 3px solid var(--warning); }
+.reg-detail-card.approved { border-left: 3px solid var(--success); }
+.reg-detail-card.rejected { border-left: 3px solid var(--danger); opacity: 0.75; }
+.reg-detail-card.cancelled { border-left: 3px solid var(--text-dim); opacity: 0.65; }
+.reg-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.reg-card-header h3 { font-size: 1rem; font-weight: 700; color: var(--text); }
+.reg-card-meta { font-size: 0.84rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+.reg-time { font-size: 0.76rem; color: var(--text-dim); margin-top: 4px; }
+
+/* ── INFO BANNER ──────────────────────────────────────────────────── */
+.info-banner { background: rgba(99,102,241,0.07); border: 1px solid rgba(99,102,241,0.25); border-radius: 10px; padding: 12px 16px; font-size: 0.83rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6; }
+
+/* ── PAGE HEADER ROW ──────────────────────────────────────────────── */
+.page-header-row { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 24px; }
+.page-header-row h1 { font-size: 1.6rem; font-weight: 800; color: var(--text); }
+
+/* ── ADMIN STAT CARD HIGHLIGHT ───────────────────────────────────── */
+@media (max-width: 600px) { .regs-grid { grid-template-columns: 1fr; } .action-btns-row { flex-direction: column; } }

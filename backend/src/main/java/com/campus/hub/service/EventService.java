@@ -11,7 +11,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -22,47 +21,43 @@ public class EventService {
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
-    private final EmailService emailService;
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
     }
 
     public Event createEvent(Event event) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
         event.setOrganizerId(user.getId());
         event.setOrganizer(user.getName());
         return eventRepository.save(event);
     }
 
     public void deleteEvent(String id) {
-        if (!eventRepository.existsById(id)) {
-            throw new RuntimeException("Event not found");
-        }
+        eventRepository.findById(id).orElseThrow(() -> new RuntimeException("Event not found"));
         eventRepository.deleteById(id);
-        registrationRepository.findByEventId(id).forEach(r ->
-                registrationRepository.deleteById(r.getId()));
     }
 
+    /**
+     * Student registers → status = PENDING
+     * Admin must approve before student gets QR pass
+     */
     public Registration registerForEvent(String eventId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+        User user = getCurrentUser();
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
-        // Prevent duplicate registration
         if (registrationRepository.existsByUserIdAndEventId(user.getId(), eventId)) {
-            throw new RuntimeException("You are already registered for this event");
+            throw new RuntimeException("You have already registered for this event");
         }
 
-        String registeredAt = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
-
-        Registration registration = Registration.builder()
+        Registration reg = Registration.builder()
                 .userId(user.getId())
                 .userName(user.getName())
                 .userEmail(user.getEmail())
@@ -71,41 +66,26 @@ public class EventService {
                 .eventDate(event.getDate())
                 .eventTime(event.getTime())
                 .eventLocation(event.getLocation())
-                .status("CONFIRMED")
+                .status("PENDING")
                 .build();
 
-        Registration saved = registrationRepository.save(registration);
+        Registration saved = registrationRepository.save(reg);
 
-        // ── Notify the student
+        // Notify student — pending
         notificationService.createNotification(
                 user.getId(),
-                "Event Registration Confirmed",
-                "🎟️ You have successfully registered for \"" + event.getTitle() + "\" on " + event.getDate(),
-                "SUCCESS"
+                "Registration Submitted",
+                "⏳ Your registration for \"" + event.getTitle() + "\" is pending admin approval.",
+                "INFO"
         );
 
-        // ── Notify the admin/organizer
-        String organizerId = event.getOrganizerId();
-        if (organizerId != null && !organizerId.isBlank()) {
+        // Notify organizer/admin
+        if (event.getOrganizerId() != null && !event.getOrganizerId().isBlank()) {
             notificationService.createNotification(
-                    organizerId,
+                    event.getOrganizerId(),
                     "New Event Registration",
-                    "🎓 " + user.getName() + " has registered for your event: \"" + event.getTitle() + "\"",
+                    "🎓 " + user.getName() + " wants to register for \"" + event.getTitle() + "\". Please approve or reject.",
                     "INFO"
-            );
-
-            // ── Send email to organizer
-            userRepository.findById(organizerId).ifPresent(organizer ->
-                    emailService.sendEventRegistrationEmail(
-                            organizer.getEmail(),
-                            organizer.getName(),
-                            event.getTitle(),
-                            event.getDate(),
-                            event.getTime(),
-                            user.getName(),
-                            user.getEmail(),
-                            registeredAt
-                    )
             );
         }
 
@@ -113,27 +93,57 @@ public class EventService {
     }
 
     public List<Registration> getMyRegistrations() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
         return registrationRepository.findByUserId(user.getId());
+    }
+
+    public List<Registration> getAllRegistrations() {
+        return registrationRepository.findAll();
     }
 
     public List<Registration> getEventRegistrations(String eventId) {
         return registrationRepository.findByEventId(eventId);
     }
 
-    public boolean isRegistered(String eventId) {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return registrationRepository.existsByUserIdAndEventId(user.getId(), eventId);
+    /**
+     * Admin approves or rejects a registration.
+     * APPROVED → student gets QR pass notification
+     * REJECTED → student gets rejection notification
+     */
+    public Registration updateRegistrationStatus(String registrationId, String status) {
+        Registration reg = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new RuntimeException("Registration not found"));
+
+        reg.setStatus(status.toUpperCase());
+        reg.setUpdatedAt(LocalDateTime.now());
+        Registration updated = registrationRepository.save(reg);
+
+        // Notify the student
+        String title, message;
+        String type;
+        if ("APPROVED".equalsIgnoreCase(status)) {
+            title = "Registration Approved! 🎉";
+            message = "✅ Your registration for \"" + reg.getEventTitle() + "\" has been APPROVED. Your QR pass is ready!";
+            type = "SUCCESS";
+        } else if ("REJECTED".equalsIgnoreCase(status)) {
+            title = "Registration Rejected";
+            message = "❌ Your registration for \"" + reg.getEventTitle() + "\" was not approved. Contact the organizer for details.";
+            type = "WARNING";
+        } else {
+            title = "Registration Updated";
+            message = "Your registration for \"" + reg.getEventTitle() + "\" status: " + status;
+            type = "INFO";
+        }
+
+        notificationService.createNotification(reg.getUserId(), title, message, type);
+        return updated;
     }
 
     public void cancelRegistration(String registrationId) {
-        Registration r = registrationRepository.findById(registrationId)
+        Registration reg = registrationRepository.findById(registrationId)
                 .orElseThrow(() -> new RuntimeException("Registration not found"));
-        r.setStatus("CANCELLED");
-        registrationRepository.save(r);
+        reg.setStatus("CANCELLED");
+        reg.setUpdatedAt(LocalDateTime.now());
+        registrationRepository.save(reg);
     }
 }

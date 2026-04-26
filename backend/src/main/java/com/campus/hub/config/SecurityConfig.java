@@ -49,9 +49,10 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/external-events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/events").permitAll()
                 .requestMatchers("/api/chatbot/**").permitAll()
+                // Admin only
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             )

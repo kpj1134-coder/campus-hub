@@ -16,35 +16,28 @@ public class ContactRequestController {
 
     private final ContactRequestService contactRequestService;
 
-    /** POST /api/contact-requests — buyer sends contact request */
     @PostMapping
-    public ResponseEntity<ContactRequest> createContactRequest(@RequestBody Map<String, String> body) {
-        String productId = body.get("productId");
-        String message = body.getOrDefault("message", "Hi, I am interested in this product. Please share more details.");
-        if (productId == null || productId.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(contactRequestService.createContactRequest(productId, message));
+    public ResponseEntity<ContactRequest> create(@RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(contactRequestService.createContactRequest(
+                body.get("productId"),
+                body.getOrDefault("message", "I am interested in this product. Please share details.")
+        ));
     }
 
-    /** GET /api/contact-requests/my — buyer's sent requests */
-    @GetMapping("/my")
-    public ResponseEntity<List<ContactRequest>> getMyContactRequests() {
-        return ResponseEntity.ok(contactRequestService.getMyContactRequests());
+    @GetMapping("/buyer")
+    public ResponseEntity<List<ContactRequest>> buyerRequests() {
+        return ResponseEntity.ok(contactRequestService.getBuyerRequests());
     }
 
-    /** GET /api/contact-requests/seller — requests received as a seller */
     @GetMapping("/seller")
-    public ResponseEntity<List<ContactRequest>> getSellerContactRequests() {
-        return ResponseEntity.ok(contactRequestService.getSellerContactRequests());
+    public ResponseEntity<List<ContactRequest>> sellerRequests() {
+        return ResponseEntity.ok(contactRequestService.getSellerRequests());
     }
 
-    /** PUT /api/contact-requests/{id}/status — update request status */
     @PutMapping("/{id}/status")
     public ResponseEntity<ContactRequest> updateStatus(
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
-        String status = body.getOrDefault("status", "VIEWED");
-        return ResponseEntity.ok(contactRequestService.updateStatus(id, status));
+        return ResponseEntity.ok(contactRequestService.updateStatus(id, body.get("status")));
     }
 }
