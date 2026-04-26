@@ -1,9 +1,11 @@
 package com.campus.hub.config;
 
 import com.campus.hub.model.Event;
+import com.campus.hub.model.ExternalEvent;
 import com.campus.hub.model.Product;
 import com.campus.hub.model.User;
 import com.campus.hub.repository.EventRepository;
+import com.campus.hub.repository.ExternalEventRepository;
 import com.campus.hub.repository.ProductRepository;
 import com.campus.hub.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final EventRepository eventRepository;
+    private final ExternalEventRepository externalEventRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -37,6 +40,7 @@ public class DataSeeder implements CommandLineRunner {
         seedUsers();
         seedProducts();
         seedEvents();
+        seedExternalEvents();
         log.info("Data seeding complete!");
     }
 
@@ -249,5 +253,78 @@ public class DataSeeder implements CommandLineRunner {
         );
         eventRepository.saveAll(events);
         log.info("Seeded {} events", events.size());
+    }
+
+    private void seedExternalEvents() {
+        List<ExternalEvent> externalEvents = List.of(
+            ExternalEvent.builder()
+                .title("Smart India Hackathon 2024")
+                .eventType("Hackathon")
+                .collegeName("NIT Trichy")
+                .city("Tiruchirappalli")
+                .state("Tamil Nadu")
+                .startDate("2024-12-19")
+                .endDate("2024-12-20")
+                .sourceName("Knowafest")
+                .sourceUrl("https://www.knowafest.com/explore/events/smart-india-hackathon-2024")
+                .build(),
+            ExternalEvent.builder()
+                .title("TechXcelerate 2024 - National Level Technical Fest")
+                .eventType("Technical Fest")
+                .collegeName("IIT Bombay")
+                .city("Mumbai")
+                .state("Maharashtra")
+                .startDate("2024-12-28")
+                .endDate("2024-12-30")
+                .sourceName("Knowafest")
+                .sourceUrl("https://www.knowafest.com/explore/events")
+                .build(),
+            ExternalEvent.builder()
+                .title("AI & ML Summit 2024")
+                .eventType("Workshop")
+                .collegeName("VIT University")
+                .city("Vellore")
+                .state("Tamil Nadu")
+                .startDate("2025-01-05")
+                .endDate("2025-01-06")
+                .sourceName("Knowafest")
+                .sourceUrl("https://www.knowafest.com/explore/events")
+                .build(),
+            ExternalEvent.builder()
+                .title("CodeFest National Programming Contest")
+                .eventType("Hackathon")
+                .collegeName("BITS Pilani")
+                .city("Pilani")
+                .state("Rajasthan")
+                .startDate("2025-01-10")
+                .endDate("2025-01-11")
+                .sourceName("Knowafest")
+                .sourceUrl("https://www.knowafest.com/explore/events")
+                .build(),
+            ExternalEvent.builder()
+                .title("Entrepreneurship Conclave 2025")
+                .eventType("Seminar")
+                .collegeName("IIM Ahmedabad")
+                .city("Ahmedabad")
+                .state("Gujarat")
+                .startDate("2025-01-15")
+                .endDate("2025-01-15")
+                .sourceName("Knowafest")
+                .sourceUrl("https://www.knowafest.com/explore/events")
+                .build(),
+            ExternalEvent.builder()
+                .title("Robowars Championship 2025")
+                .eventType("Competition")
+                .collegeName("DTU Delhi")
+                .city("New Delhi")
+                .state("Delhi")
+                .startDate("2025-01-20")
+                .endDate("2025-01-21")
+                .sourceName("Knowafest")
+                .sourceUrl("https://www.knowafest.com/explore/events")
+                .build()
+        );
+        externalEventRepository.saveAll(externalEvents);
+        log.info("Seeded {} external events", externalEvents.size());
     }
 }

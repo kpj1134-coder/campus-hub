@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/external-events/**").permitAll()
                 .requestMatchers("/api/chatbot/**").permitAll()
                 // All other endpoints require authentication
                 .anyRequest().authenticated()

@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -18,7 +20,18 @@ public class Registration {
     private String id;
 
     private String userId;
+    private String userName;
+    private String userEmail;
+
     private String eventId;
     private String eventTitle;
-    private String userName;
+    private String eventDate;
+    private String eventTime;
+    private String eventLocation;
+
+    @Builder.Default
+    private LocalDateTime registeredAt = LocalDateTime.now();
+
+    @Builder.Default
+    private String status = "CONFIRMED";
 }

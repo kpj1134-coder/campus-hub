@@ -54,22 +54,27 @@ public class EventService {
 
         // Prevent duplicate registration
         if (registrationRepository.existsByUserIdAndEventId(user.getId(), eventId)) {
-            throw new RuntimeException("Already registered for this event");
+            throw new RuntimeException("You are already registered for this event");
         }
 
         Registration registration = Registration.builder()
                 .userId(user.getId())
+                .userName(user.getName())
+                .userEmail(user.getEmail())
                 .eventId(eventId)
                 .eventTitle(event.getTitle())
-                .userName(user.getName())
+                .eventDate(event.getDate())
+                .eventTime(event.getTime())
+                .eventLocation(event.getLocation())
+                .status("CONFIRMED")
                 .build();
 
         Registration saved = registrationRepository.save(registration);
 
-        // Create notification
+        // Notify the student
         notificationService.createNotification(
                 user.getId(),
-                "You have successfully registered for: " + event.getTitle(),
+                "🎟️ You have successfully registered for: \"" + event.getTitle() + "\" on " + event.getDate(),
                 "SUCCESS"
         );
 
