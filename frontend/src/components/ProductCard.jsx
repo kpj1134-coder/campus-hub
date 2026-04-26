@@ -4,8 +4,8 @@ import API from '../api/axios';
 
 const statusConfig = {
   AVAILABLE: { label: 'Available', color: 'var(--success)', bg: 'rgba(16,185,129,0.12)' },
-  RESERVED:  { label: 'Reserved',  color: 'var(--warning)', bg: 'rgba(245,158,11,0.12)' },
-  SOLD:      { label: 'Sold',      color: 'var(--danger)',  bg: 'rgba(239,68,68,0.12)' },
+  RESERVED: { label: 'Reserved', color: 'var(--warning)', bg: 'rgba(245,158,11,0.12)' },
+  SOLD: { label: 'Sold', color: 'var(--danger)', bg: 'rgba(239,68,68,0.12)' },
 };
 
 const categoryColors = {
@@ -36,7 +36,7 @@ const ProductCard = ({ product, onEdit, onDelete, onStatusChange }) => {
     if (user && !isOwner && !isAdmin) {
       API.get(`/api/wishlist/check/${product.id}`)
         .then(r => setSaved(r.data.saved))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [product.id]);
 
@@ -86,7 +86,6 @@ const ProductCard = ({ product, onEdit, onDelete, onStatusChange }) => {
           onError={e => { e.target.src = 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400'; }}
         />
         <span className="product-category" style={{ background: color }}>{product.category}</span>
-        {/* Product status badge */}
         <span className="product-status-badge" style={{ background: sc.bg, color: sc.color }}>
           {sc.label}
         </span>
