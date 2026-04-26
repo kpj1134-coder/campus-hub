@@ -12,9 +12,9 @@
 
 ---
 
-## 📸 Screenshot
+<!--## 📸 Screenshot
 
-![Campus Hub Dashboard](./public/screenshot-dashboard.png)
+![Campus Hub Dashboard](./public/screenshot-dashboard.png) -->
 
 ---
 
