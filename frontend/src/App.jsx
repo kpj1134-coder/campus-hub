@@ -12,13 +12,14 @@ import Notifications from './pages/Notifications';
 import Chatbot from './pages/Chatbot';
 import ContactRequests from './pages/ContactRequests';
 import MyRegisteredEvents from './pages/MyRegisteredEvents';
+import Profile from './pages/Profile';
 
 function App() {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="loading-screen">
+      <div className="loading-screen" style={{ minHeight: '100vh' }}>
         <div className="spinner" />
         <p>Loading Campus Hub...</p>
       </div>
@@ -32,23 +33,14 @@ function App() {
 
       <main className={user ? 'main-content' : 'main-content-auth'}>
         <Routes>
-          {/* Public routes - only accessible when NOT logged in */}
-          <Route
-            path="/login"
-            element={user ? <Navigate to="/dashboard" replace /> : <Login />}
-          />
-          <Route
-            path="/register"
-            element={user ? <Navigate to="/dashboard" replace /> : <Register />}
-          />
+          {/* Public routes */}
+          <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
 
           {/* Root redirect */}
-          <Route
-            path="/"
-            element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
-          />
+          <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />
 
-          {/* Protected routes - require authentication */}
+          {/* Protected routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
           <Route path="/events" element={<ProtectedRoute><Events /></ProtectedRoute>} />
@@ -57,6 +49,7 @@ function App() {
           <Route path="/chatbot" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
           <Route path="/contact-requests" element={<ProtectedRoute><ContactRequests /></ProtectedRoute>} />
           <Route path="/my-registered-events" element={<ProtectedRoute><MyRegisteredEvents /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to={user ? '/dashboard' : '/login'} replace />} />

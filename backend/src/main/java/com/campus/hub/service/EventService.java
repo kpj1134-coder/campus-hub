@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -20,6 +22,7 @@ public class EventService {
     private final RegistrationRepository registrationRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public List<Event> getAllEvents() {
         return eventRepository.findAll();
@@ -39,7 +42,6 @@ public class EventService {
             throw new RuntimeException("Event not found");
         }
         eventRepository.deleteById(id);
-        // Also remove all registrations for this event
         registrationRepository.findByEventId(id).forEach(r ->
                 registrationRepository.deleteById(r.getId()));
     }
@@ -57,6 +59,9 @@ public class EventService {
             throw new RuntimeException("You are already registered for this event");
         }
 
+        String registeredAt = LocalDateTime.now()
+                .format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
+
         Registration registration = Registration.builder()
                 .userId(user.getId())
                 .userName(user.getName())
@@ -71,12 +76,38 @@ public class EventService {
 
         Registration saved = registrationRepository.save(registration);
 
-        // Notify the student
+        // ── Notify the student
         notificationService.createNotification(
                 user.getId(),
-                "🎟️ You have successfully registered for: \"" + event.getTitle() + "\" on " + event.getDate(),
+                "Event Registration Confirmed",
+                "🎟️ You have successfully registered for \"" + event.getTitle() + "\" on " + event.getDate(),
                 "SUCCESS"
         );
+
+        // ── Notify the admin/organizer
+        String organizerId = event.getOrganizerId();
+        if (organizerId != null && !organizerId.isBlank()) {
+            notificationService.createNotification(
+                    organizerId,
+                    "New Event Registration",
+                    "🎓 " + user.getName() + " has registered for your event: \"" + event.getTitle() + "\"",
+                    "INFO"
+            );
+
+            // ── Send email to organizer
+            userRepository.findById(organizerId).ifPresent(organizer ->
+                    emailService.sendEventRegistrationEmail(
+                            organizer.getEmail(),
+                            organizer.getName(),
+                            event.getTitle(),
+                            event.getDate(),
+                            event.getTime(),
+                            user.getName(),
+                            user.getEmail(),
+                            registeredAt
+                    )
+            );
+        }
 
         return saved;
     }
@@ -88,10 +119,21 @@ public class EventService {
         return registrationRepository.findByUserId(user.getId());
     }
 
+    public List<Registration> getEventRegistrations(String eventId) {
+        return registrationRepository.findByEventId(eventId);
+    }
+
     public boolean isRegistered(String eventId) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return registrationRepository.existsByUserIdAndEventId(user.getId(), eventId);
+    }
+
+    public void cancelRegistration(String registrationId) {
+        Registration r = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new RuntimeException("Registration not found"));
+        r.setStatus("CANCELLED");
+        registrationRepository.save(r);
     }
 }

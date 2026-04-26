@@ -46,8 +46,20 @@ public class EventController {
         return ResponseEntity.ok(eventService.getMyRegistrations());
     }
 
+    @GetMapping("/{id}/registrations")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Registration>> getEventRegistrations(@PathVariable String id) {
+        return ResponseEntity.ok(eventService.getEventRegistrations(id));
+    }
+
     @GetMapping("/{id}/is-registered")
     public ResponseEntity<Map<String, Boolean>> isRegistered(@PathVariable String id) {
         return ResponseEntity.ok(Map.of("registered", eventService.isRegistered(id)));
+    }
+
+    @DeleteMapping("/registrations/{registrationId}")
+    public ResponseEntity<Map<String, String>> cancelRegistration(@PathVariable String registrationId) {
+        eventService.cancelRegistration(registrationId);
+        return ResponseEntity.ok(Map.of("message", "Registration cancelled"));
     }
 }

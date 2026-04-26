@@ -20,6 +20,7 @@ public class ContactRequestService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public ContactRequest createContactRequest(String productId, String message) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -48,11 +49,30 @@ public class ContactRequestService {
 
         ContactRequest saved = contactRequestRepository.save(request);
 
-        // Notify the seller
+        // ── Notify the seller (in-app)
         notificationService.createNotification(
                 product.getSellerId(),
+                "New Buyer Interest",
                 "📬 " + buyer.getName() + " is interested in your product: \"" + product.getTitle() + "\"",
                 "INFO"
+        );
+
+        // ── Notify the buyer (in-app)
+        notificationService.createNotification(
+                buyer.getId(),
+                "Contact Request Sent",
+                "✅ Your contact request for \"" + product.getTitle() + "\" was sent to " + product.getSellerName(),
+                "SUCCESS"
+        );
+
+        // ── Email the seller
+        emailService.sendContactSellerEmail(
+                product.getContact(),  // seller's email/contact
+                product.getSellerName(),
+                buyer.getName(),
+                buyer.getEmail(),
+                product.getTitle(),
+                message
         );
 
         return saved;
@@ -65,10 +85,17 @@ public class ContactRequestService {
         return contactRequestRepository.findByBuyerIdOrderByCreatedAtDesc(buyer.getId());
     }
 
-    public long getMyContactRequestCount() {
+    public List<ContactRequest> getSellerContactRequests() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User buyer = userRepository.findByEmail(email)
+        User seller = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return contactRequestRepository.findByBuyerIdOrderByCreatedAtDesc(buyer.getId()).size();
+        return contactRequestRepository.findBySellerIdOrderByCreatedAtDesc(seller.getId());
+    }
+
+    public ContactRequest updateStatus(String requestId, String status) {
+        ContactRequest request = contactRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Contact request not found"));
+        request.setStatus(status);
+        return contactRequestRepository.save(request);
     }
 }

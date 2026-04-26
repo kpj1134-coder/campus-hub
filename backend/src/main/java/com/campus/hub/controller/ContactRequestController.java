@@ -16,10 +16,7 @@ public class ContactRequestController {
 
     private final ContactRequestService contactRequestService;
 
-    /**
-     * POST /api/contact-requests
-     * Body: { "productId": "...", "message": "..." }
-     */
+    /** POST /api/contact-requests — buyer sends contact request */
     @PostMapping
     public ResponseEntity<ContactRequest> createContactRequest(@RequestBody Map<String, String> body) {
         String productId = body.get("productId");
@@ -30,12 +27,24 @@ public class ContactRequestController {
         return ResponseEntity.ok(contactRequestService.createContactRequest(productId, message));
     }
 
-    /**
-     * GET /api/contact-requests/my
-     * Returns contact requests made by the current logged-in buyer
-     */
+    /** GET /api/contact-requests/my — buyer's sent requests */
     @GetMapping("/my")
     public ResponseEntity<List<ContactRequest>> getMyContactRequests() {
         return ResponseEntity.ok(contactRequestService.getMyContactRequests());
+    }
+
+    /** GET /api/contact-requests/seller — requests received as a seller */
+    @GetMapping("/seller")
+    public ResponseEntity<List<ContactRequest>> getSellerContactRequests() {
+        return ResponseEntity.ok(contactRequestService.getSellerContactRequests());
+    }
+
+    /** PUT /api/contact-requests/{id}/status — update request status */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<ContactRequest> updateStatus(
+            @PathVariable String id,
+            @RequestBody Map<String, String> body) {
+        String status = body.getOrDefault("status", "VIEWED");
+        return ResponseEntity.ok(contactRequestService.updateStatus(id, status));
     }
 }

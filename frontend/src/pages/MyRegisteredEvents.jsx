@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axios';
+import { formatTimeAgo, formatDateTime } from '../utils/dateUtils';
 
 const MyRegisteredEvents = () => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cancelling, setCancelling] = useState(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -21,11 +23,19 @@ const MyRegisteredEvents = () => {
     fetch();
   }, []);
 
-  const formatDate = (dt) => {
-    if (!dt) return '';
-    return new Date(dt).toLocaleDateString('en-IN', {
-      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    });
+  const handleCancel = async (registrationId) => {
+    if (!window.confirm('Cancel this event registration?')) return;
+    setCancelling(registrationId);
+    try {
+      await API.delete(`/api/events/registrations/${registrationId}`);
+      setRegistrations(registrations.map(r =>
+        r.id === registrationId ? { ...r, status: 'CANCELLED' } : r
+      ));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to cancel');
+    } finally {
+      setCancelling(null);
+    }
   };
 
   return (
@@ -40,28 +50,31 @@ const MyRegisteredEvents = () => {
         <Link to="/events" className="btn-secondary">🎉 Browse Events</Link>
       </div>
 
-      {loading && <div className="loading-screen"><div className="spinner" /><p>Loading registrations...</p></div>}
+      {loading && <div className="loading-screen"><div className="spinner" /><p>Loading...</p></div>}
       {error && <div className="alert alert-error">{error}</div>}
 
       {!loading && registrations.length === 0 && (
         <div className="empty-state">
           <div className="empty-icon">🎪</div>
           <p>No event registrations yet.</p>
-          <Link to="/events" className="btn-primary" style={{ marginTop: 12 }}>Browse Events</Link>
+          <Link to="/events" className="btn-primary" style={{ marginTop: 12 }}>Browse Events →</Link>
         </div>
       )}
 
       <div className="requests-list">
         {registrations.map(r => (
-          <div className="request-card reg-card" key={r.id}>
+          <div className={`request-card reg-card ${r.status === 'CANCELLED' ? 'cancelled' : ''}`} key={r.id}>
             <div className="request-card-header">
               <div>
                 <h3 className="request-product-title">🎉 {r.eventTitle}</h3>
-                <span className={`request-status status-${r.status?.toLowerCase()}`}>
+                <span className={`request-status status-${(r.status || 'confirmed').toLowerCase()}`}>
                   {r.status || 'CONFIRMED'}
                 </span>
               </div>
-              <span className="request-date">Registered: {formatDate(r.registeredAt)}</span>
+              {/* Real registration timestamp */}
+              <span className="request-date" title={formatDateTime(r.registeredAt)}>
+                Registered: {formatTimeAgo(r.registeredAt)}
+              </span>
             </div>
             <div className="request-body">
               {r.eventDate && (
@@ -93,6 +106,18 @@ const MyRegisteredEvents = () => {
                 </div>
               )}
             </div>
+            {r.status !== 'CANCELLED' && (
+              <div style={{ marginTop: 12 }}>
+                <button
+                  className="btn-danger"
+                  style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+                  onClick={() => handleCancel(r.id)}
+                  disabled={cancelling === r.id}
+                >
+                  {cancelling === r.id ? '⏳ Cancelling...' : '❌ Cancel Registration'}
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -37,10 +37,7 @@ const Login = () => {
         </div>
 
         <div className="demo-box">
-          <p>
-            <strong>Demo — Admin:</strong> admin@campus.com / admin123<br />
-            <strong>Demo — Student:</strong> priya@student.com / student123
-          </p>
+          
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button className="btn-secondary" style={{ fontSize: '0.78rem', padding: '4px 10px' }} onClick={() => fillDemo('admin@campus.com', 'admin123')}>Use Admin</button>
             <button className="btn-secondary" style={{ fontSize: '0.78rem', padding: '4px 10px' }} onClick={() => fillDemo('priya@student.com', 'student123')}>Use Student</button>

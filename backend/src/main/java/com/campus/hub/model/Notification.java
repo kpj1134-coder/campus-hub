@@ -20,12 +20,23 @@ public class Notification {
     private String id;
 
     private String userId;
+
+    /** Short title like "Contact Request Sent" */
+    private String title;
+
+    /** Full message text */
     private String message;
-    private String type; // INFO, SUCCESS, WARNING
+
+    /** INFO | SUCCESS | WARNING | ERROR */
+    private String type;
 
     @Builder.Default
     private boolean read = false;
 
+    /**
+     * IMPORTANT: Always use LocalDateTime.now() — never hardcode.
+     * This ensures every notification has a unique, real timestamp.
+     */
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }
