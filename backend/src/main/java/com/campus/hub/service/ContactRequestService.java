@@ -65,9 +65,9 @@ public class ContactRequestService {
                 "SUCCESS"
         );
 
-        // ── Email the seller
-        emailService.sendContactSellerEmail(
-                product.getContact(),  // seller's email/contact
+        // ── Email OR SMS the seller (based on their contact type)
+        emailService.sendContactAlert(
+                product.getContact(),          // auto-detects email vs phone
                 product.getSellerName(),
                 buyer.getName(),
                 buyer.getEmail(),
