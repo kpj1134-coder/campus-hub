@@ -18,7 +18,8 @@
 
 ---
 
-## 🌐 Live URLs
+## 🌐 Live Demo : https://campus-hub-gold.vercel.app/
+"""URLs
 
 | Service | URL |
 |---|---|
@@ -26,7 +27,7 @@
 | **Backend API (Render)** | https://campus-hub-9fbk.onrender.com |
 | **GitHub Repository** | https://github.com/kpj1134-coder/campus-hub |
 
-> ⚠️ **Note:** Backend runs on Render free tier — first request may take **30–60 seconds** to wake up.
+> ⚠️ **Note:** Backend runs on Render free tier — first request may take **30–60 seconds** to wake up."""
 
 ---
 
